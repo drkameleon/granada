@@ -10,7 +10,7 @@ var Controller;
 
 Controller = (function() {
   function Controller() {
-    console.log("Controller:: in Super");
+    this.name = "undefined";
   }
 
   Controller.prototype.loadView = function(view, inside) {
@@ -20,7 +20,7 @@ Controller = (function() {
     this.container = inside;
     return $.get("" + view + ".html", (function(_this) {
       return function(result) {
-        _this.template = Handlebars.compile(result);
+        _this.template = G.Template.compile(result);
         $(inside).html(result);
         return _this.render();
       };
@@ -28,7 +28,50 @@ Controller = (function() {
   };
 
   Controller.prototype.render = function() {
-    return $(this.container).html(this.template(this));
+    var rendered;
+    rendered = this.template(this);
+    $(this.container).html("<div controller='" + this.name + "'>" + rendered + "</div>");
+    return this.attachEvents();
+  };
+
+  Controller.prototype.attachEvents = function() {
+    $("[controller=" + this.name + "] button[do]").click((function(_this) {
+      return function(e) {
+        var action;
+        action = $(e.target).attr("do");
+        return eval("_this." + action);
+      };
+    })(this));
+    $("[controller=" + this.name + "] input[type=text]").on('change', (function(_this) {
+      return function(e) {
+        var bound;
+        bound = $(e.target).attr("bind");
+        return _this[bound] = $(e.target).val();
+      };
+    })(this));
+    $("[controller=" + this.name + "] input[type=checkbox]").click((function(_this) {
+      return function(e) {
+        var bound;
+        bound = $(e.target).attr("bind");
+        return _this[bound] = ("" + e.target.checked) === "true";
+      };
+    })(this));
+    $("[controller=" + this.name + "] textarea").on('change', (function(_this) {
+      return function(e) {
+        var bound;
+        bound = $(e.target).attr("bind");
+        return _this[bound] = $(e.target).val();
+      };
+    })(this));
+    return $("[go]").on('click', (function(_this) {
+      return function(e) {
+        var destination;
+        destination = $(e.target).attr("go");
+        G.router = new G.Router("#!" + destination);
+        G.router.load();
+        return e.preventDefault();
+      };
+    })(this));
   };
 
   Controller.prototype.watch = function() {
@@ -51,10 +94,16 @@ Controller = (function() {
 var Router;
 
 Router = (function() {
-  function Router() {
+  function Router(redirect) {
     var parts, url;
+    if (redirect == null) {
+      redirect = null;
+    }
     this.argv = {};
     this.path = ["home", "index"];
+    if (redirect != null) {
+      history.replaceState(null, null, redirect);
+    }
     url = window.location.href.split("#!").filter((function(_this) {
       return function(n) {
         return n !== "";
@@ -109,11 +158,16 @@ Router = (function() {
     })(this));
   };
 
-  Router.prototype.redirect = function() {
-    var controller;
-    controller = this.path[0].charAt(0).toUpperCase() + this.path[0].slice(1);
-    controller = new window[controller]();
-    G.controllers.push(controller);
+  Router.prototype.load = function() {
+    var controller, controllerName;
+    controllerName = this.path[0].charAt(0).toUpperCase() + this.path[0].slice(1);
+    if (G.controllers[controllerName] == null) {
+      controller = new window[controllerName]();
+      controller.name = controllerName;
+      G.controllers[controllerName] = controller;
+    } else {
+      controller = G.controllers[controllerName];
+    }
     controller.watch();
     return controller[this.path[1]]();
   };
@@ -127,8 +181,15 @@ var Granada;
 Granada = (function() {
   function Granada() {
     this.Controller = Controller;
+    this.Router = Router;
+    this.Template = Handlebars;
     this.router = new Router();
-    this.controllers = [];
+    this.controllers = {};
+    $((function(_this) {
+      return function() {
+        return _this.router.load();
+      };
+    })(this));
   }
 
   return Granada;
