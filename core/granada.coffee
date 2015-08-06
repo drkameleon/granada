@@ -12,9 +12,14 @@ class Granada
 
 	constructor:()->
 		@Controller = Controller;
+		@Router = Router;
+		@Template = Handlebars;
 
 		@router = new Router();
-		@controllers = [];
+		@controllers = {};
+
+		$ =>
+			@router.load();
 
 
 @G = new Granada() unless @G;
