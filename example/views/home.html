@@ -1,3 +1,8 @@
 <h1>This is the home</h1>
 <h3>Hello {{username}}!</h3>
 <h4>Your e-mail is: {{email}}</h4>
+<input type="checkbox" value="Selected" bind="selected" {{#if selected}}checked{{/if}}>
+<button do="alert()">Alert me</button>
+<input type="text" bind="username" value="{{username}}"/>
+<textarea bind="content">{{content}}</textarea>
+<a href="#" go="/home/about">Go to about</a>
