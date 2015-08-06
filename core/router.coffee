@@ -10,9 +10,12 @@
 
 class Router
 
-	constructor:()->
+	constructor:(redirect=null)->
 		@argv = {};
 		@path = ["home","index"];
+
+		if redirect?
+			history.replaceState(null,null,redirect);
 
 		url = window.location.href.split("#!").filter((n)=>return n!="");
 
@@ -26,7 +29,6 @@ class Router
 
 		console.log("Path: ",@path);
 		console.log("Argv: ",@argv);
-
 
 	parseArgs:(s)->
 		result = {};
@@ -45,10 +47,17 @@ class Router
 	parsePath:(s)->
 		return s.split("/").filter((n)=>return n!="");
 
-	redirect:()->
-		controller = @path[0].charAt(0).toUpperCase() + @path[0].slice(1);
+	load:()->
+		controllerName = @path[0].charAt(0).toUpperCase() + @path[0].slice(1);
 
-		controller = new window[controller]();
-		G.controllers.push(controller);
+		if !G.controllers[controllerName]?
+
+			controller = new window[controllerName]();
+			controller.name = controllerName;
+
+			G.controllers[controllerName] = controller;
+		else
+			controller = G.controllers[controllerName];
+
 		controller.watch();
 		controller[@path[1]]();
