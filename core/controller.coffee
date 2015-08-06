@@ -11,19 +11,49 @@
 class Controller
 
 	constructor:()->
-		console.log("Controller:: in Super");
+		@name = "undefined";
 
 	loadView:(view,inside="body")->
 		@container = inside;
 
 		$.get("#{ view }.html",(result)=>
-			@template = Handlebars.compile(result);
+			@template = G.Template.compile(result);
 			$(inside).html(result);
 			@render();
 		);
 
 	render:()->
-		$(@container).html(@template(@));
+		rendered = @template(@);
+		$(@container).html("<div controller='#{ @name }'>#{ rendered }</div>");
+		@attachEvents();
+
+	attachEvents:()->
+		$("[controller=#{ @name }] button[do]").click((e)=>
+			action = $(e.target).attr("do");
+			eval("_this.#{ action }");
+		);
+
+		$("[controller=#{ @name }] input[type=text]").on('change',(e)=>
+			bound = $(e.target).attr("bind");
+			_this[bound] = $(e.target).val();
+		);
+
+		$("[controller=#{ @name }] input[type=checkbox]").click((e)=>
+			bound = $(e.target).attr("bind");
+			_this[bound] = "#{e.target.checked}"=="true"
+		);
+
+		$("[controller=#{ @name }] textarea").on('change',(e)=>
+			bound = $(e.target).attr("bind");
+			_this[bound] = $(e.target).val();
+		);
+
+		$("[go]").on('click',(e)=>
+			destination = $(e.target).attr("go");
+			G.router = new G.Router("#!#{ destination }");
+			G.router.load();
+			e.preventDefault();
+		);
 
 	watch:()->
 		watch(@,=>
